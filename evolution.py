@@ -59,7 +59,7 @@ def _init_transformers(model_name, cache_dir, local_files_only):
         local_files_only=local_files_only,
         use_fast=False,
     )
-    torch_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+    torch_dtype = torch.bfloat16 if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else torch.float16
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         torch_dtype=torch_dtype,
@@ -102,15 +102,25 @@ def init_inference_model(model_name, max_seq_length, load_in_4bit, cache_dir, lo
         MODEL, TOKENIZER = _init_unsloth(model_name, max_seq_length, load_in_4bit, cache_dir, resolved_local_only)
 
 def refresh_inference_from_trainer(trainer):
-    global MODEL, TOKENIZER, INFERENCE_ENGINE
-    if trainer is None or getattr(trainer, "model", None) is None or getattr(trainer, "tokenizer", None) is None:
+    global MODEL, TOKENIZER, INFERENCE_ENGINE, inference_model_fn
+    if trainer is None:
         return
-    TOKENIZER = trainer.tokenizer
-    MODEL = FastLanguageModel.for_inference(trainer.model)
-    ensure_qwen2_temp_qa(MODEL)
-    if INFERENCE_ENGINE is not None and not INFERENCE_ENGINE.use_vllm:
+    trainer_model = getattr(trainer, "model", None)
+    trainer_tokenizer = getattr(trainer, "tokenizer", None)
+    if trainer_model is None or trainer_tokenizer is None:
+        return
+    TOKENIZER = trainer_tokenizer
+    model = trainer_model
+    try:
+        model = FastLanguageModel.for_inference(model)
+        ensure_qwen2_temp_qa(model)
+    except Exception:
+        model = trainer_model
+    MODEL = model
+    if INFERENCE_ENGINE is not None:
         INFERENCE_ENGINE.model = MODEL
         INFERENCE_ENGINE.tokenizer = TOKENIZER
+        inference_model_fn = INFERENCE_ENGINE
 
 def normalize_chat_history(history):
     if not isinstance(history, list):
