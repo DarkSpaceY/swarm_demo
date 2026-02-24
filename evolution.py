@@ -114,7 +114,7 @@ def refresh_inference_from_trainer(trainer):
     try:
         model = FastLanguageModel.for_inference(model)
         ensure_qwen2_temp_qa(model)
-    except Exception:
+    except (ImportError, RuntimeError, AttributeError, ValueError):
         model = trainer_model
     MODEL = model
     if INFERENCE_ENGINE is not None:
