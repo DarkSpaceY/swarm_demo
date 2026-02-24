@@ -24,7 +24,6 @@ from train.converter import (
     save_jsonl_data,
     convert_judge_trajectories_to_preference
 )
-from core.model_manager import get_engine, UnslothEngine, TransformersEngine, VLLMEngine
 from train.finetuner import SwarmTrainer, resolve_local_files_only, ensure_qwen2_temp_qa
 
 CONFIG = get_config()
@@ -44,38 +43,63 @@ VLLM_ENGINE = None
 inference_model_fn = None
 GEN_CONFIG = dict(CONFIG["generation"])
 
-def init_inference_model(model_name, max_seq_length, load_in_4bit, cache_dir, local_files_only, use_vllm):
-    """
-    初始化推理引擎，使用重构后的模型管理器。
-    """
-    global MODEL, TOKENIZER, INFERENCE_ENGINE
-    resolved_local_only = resolve_local_files_only(model_name, cache_dir, local_files_only)
-    
-    disable_unsloth = os.environ.get(CONFIG["inference"]["disable_unsloth_env"]) == "1"
-    
-    # 根据配置和环境选择引擎类型
-    if use_vllm:
-        engine_type = "vllm"
-    elif disable_unsloth:
-        engine_type = "transformers"
-    else:
-        engine_type = "unsloth"
+def _init_vllm(model_name, cache_dir, local_files_only):
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_name,
+        cache_dir=cache_dir,
+        local_files_only=local_files_only,
+        use_fast=False,
+    )
+    return None, tokenizer
 
-    # 获取并加载引擎
-    INFERENCE_ENGINE = get_engine(engine_type, model_name, cache_dir, resolved_local_only)
-    
-    if engine_type == "vllm":
-        _, TOKENIZER = INFERENCE_ENGINE.load()
-        MODEL = None
-    elif engine_type == "transformers":
-        device = CONFIG["inference"]["cuda_device"] if torch.cuda.is_available() else CONFIG["inference"]["cpu_device"]
-        MODEL, TOKENIZER = INFERENCE_ENGINE.load(device=device)
+def _init_transformers(model_name, cache_dir, local_files_only):
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_name,
+        cache_dir=cache_dir,
+        local_files_only=local_files_only,
+        use_fast=False,
+    )
+    torch_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name,
+        torch_dtype=torch_dtype,
+        low_cpu_mem_usage=True,
+        cache_dir=cache_dir,
+        local_files_only=local_files_only,
+    )
+    device = CONFIG["inference"]["cuda_device"] if torch.cuda.is_available() else CONFIG["inference"]["cpu_device"]
+    model = model.to(device)
+    return model, tokenizer
+
+def _init_unsloth(model_name, max_seq_length, load_in_4bit, cache_dir, local_files_only):
+    model, tokenizer = FastLanguageModel.from_pretrained(
+        model_name=model_name,
+        max_seq_length=max_seq_length,
+        dtype=None,
+        load_in_4bit=load_in_4bit,
+        cache_dir=cache_dir,
+        local_files_only=local_files_only,
+    )
+    model = FastLanguageModel.for_inference(model)
+    ensure_qwen2_temp_qa(model)
+    return model, tokenizer
+
+def _select_inference_mode(use_vllm):
+    if use_vllm:
+        return "vllm"
+    disable_unsloth = os.environ.get(CONFIG["inference"]["disable_unsloth_env"]) == "1"
+    return "transformers" if disable_unsloth else "unsloth"
+
+def init_inference_model(model_name, max_seq_length, load_in_4bit, cache_dir, local_files_only, use_vllm):
+    global MODEL, TOKENIZER
+    resolved_local_only = resolve_local_files_only(model_name, cache_dir, local_files_only)
+    mode = _select_inference_mode(use_vllm)
+    if mode == "vllm":
+        MODEL, TOKENIZER = _init_vllm(model_name, cache_dir, resolved_local_only)
+    elif mode == "transformers":
+        MODEL, TOKENIZER = _init_transformers(model_name, cache_dir, resolved_local_only)
     else:
-        MODEL, TOKENIZER = INFERENCE_ENGINE.load(
-            max_seq_length=max_seq_length, 
-            load_in_4bit=load_in_4bit
-        )
-        ensure_qwen2_temp_qa(MODEL)
+        MODEL, TOKENIZER = _init_unsloth(model_name, max_seq_length, load_in_4bit, cache_dir, resolved_local_only)
 
 def refresh_inference_from_trainer(trainer):
     global MODEL, TOKENIZER, INFERENCE_ENGINE
