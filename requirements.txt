@@ -2,8 +2,11 @@
 torch==2.5.1+cu124
 torchvision==0.20.1+cu124
 torchaudio==2.5.1+cu124
-transformers
+transformers==4.51.0
 datasets
 trl
 unsloth
 huggingface_hub
+torchao==0.12.0
+vllm
+pyyaml

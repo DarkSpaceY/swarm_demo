@@ -1,13 +1,16 @@
 import logging
 import re
+from config_loader import get_config
+
+CONFIG = get_config()
 
 class Oracle:
     """
     负责验证 Agent 提交的答案是否正确。
     目前实现简单的字符串匹配和数值提取。
     """
-    def __init__(self):
-        pass
+    def __init__(self, llm_fn=None):
+        self.llm_fn = llm_fn
     
     def normalize_answer(self, answer_str):
         """
@@ -18,11 +21,13 @@ class Oracle:
         if not isinstance(answer_str, str):
             return str(answer_str)
 
-        clean_str = re.sub(r'\\(mathrm|text|boxed)\{.*?\}', '', answer_str)
-        clean_str = clean_str.replace('$', '').replace('\\', '')
-        clean_str = clean_str.replace(',', '')
+        clean_str = answer_str
+        for pattern in CONFIG["oracle"]["clean_patterns"]:
+            clean_str = re.sub(pattern, '', clean_str)
+        for old, new in CONFIG["oracle"]["replacements"]:
+            clean_str = clean_str.replace(old, new)
 
-        frac_match = re.findall(r'(-?\d+)\s*/\s*(-?\d+)', clean_str)
+        frac_match = re.findall(CONFIG["oracle"]["fraction_pattern"], clean_str)
         if frac_match:
             num, den = frac_match[-1]
             try:
@@ -32,7 +37,8 @@ class Oracle:
             except Exception:
                 pass
 
-        numbers = re.findall(r'-?\d+(?:\.\d+)?(?:e[-+]?\d+)?', clean_str, flags=re.IGNORECASE)
+        flags = re.IGNORECASE if CONFIG["oracle"]["number_ignorecase"] else 0
+        numbers = re.findall(CONFIG["oracle"]["number_pattern"], clean_str, flags=flags)
         if numbers:
             try:
                 return float(numbers[-1])
@@ -52,23 +58,31 @@ class Oracle:
             bool: True if correct, False otherwise
         """
         try:
+            llm_result = None
+            if callable(self.llm_fn):
+                prompt_template = CONFIG["oracle"]["llm_prompt"]
+                prompt = prompt_template.format(prediction=prediction, ground_truth=ground_truth)
+                llm_result = self.llm_fn(CONFIG["inference"]["oracle_agent_id"], [{"role": "user", "content": prompt}])
+                if isinstance(llm_result, str):
+                    text = llm_result.strip().upper()
+                    yes_token = str(CONFIG["oracle"]["yes_token"]).upper()
+                    no_token = str(CONFIG["oracle"]["no_token"]).upper()
+                    if yes_token in text and no_token not in text:
+                        return True
+                    if no_token in text and yes_token not in text:
+                        return False
             pred_val = self.normalize_answer(prediction)
             gt_val = self.normalize_answer(str(ground_truth))
-            
             if pred_val is None or gt_val is None:
-                logging.warning(f"Verification failed to extract numbers: pred='{prediction}', gt='{ground_truth}'")
+                logging.warning(f"Verification failed to extract numbers: pred='{prediction}', gt='{ground_truth}' llm='{llm_result}'")
                 return False
-                
-            # 数值比较，允许微小误差
-            is_correct = abs(pred_val - gt_val) < 1e-6
-            
+            tolerance = CONFIG["oracle"]["tolerance"]
+            is_correct = abs(pred_val - gt_val) < tolerance
             if is_correct:
-                logging.info(f"Oracle Verify: MATCH ({pred_val} == {gt_val})")
+                logging.info(f"Oracle Verify: MATCH ({pred_val} == {gt_val}) llm='{llm_result}'")
             else:
-                logging.info(f"Oracle Verify: MISMATCH ({pred_val} != {gt_val})")
-                
+                logging.info(f"Oracle Verify: MISMATCH ({pred_val} != {gt_val}) llm='{llm_result}'")
             return is_correct
-            
         except Exception as e:
             logging.error(f"Oracle verification error: {e}")
             return False

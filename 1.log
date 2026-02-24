@@ -1,0 +1,335 @@
+Unsloth: Tokenizing ["text"] (num_proc=1):   0%|                                                                            | 0/2 [00:00<?, ? examples/s]/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py:422: PicklingWarning: Cannot locate reference to <class 'builtins.safe_open'>.
+  StockPickler.save(self, obj, save_persistent_id)
+/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py:422: PicklingWarning: Cannot pickle <class 'builtins.safe_open'>: builtins.safe_open has recursive self-references that trigger a RecursionError.
+  StockPickler.save(self, obj, save_persistent_id)
+Unsloth: Tokenizing ["text"] (num_proc=1):   0%|                                                                            | 0/2 [00:04<?, ? examples/s]
+Traceback (most recent call last):
+  File "/root/swarm_demo/evolution.py", line 552, in <module>
+    main()
+  File "/root/swarm_demo/evolution.py", line 511, in main
+    trainer.train_agent(
+  File "/root/swarm_demo/train/finetuner.py", line 140, in train_agent
+    trainer = SFTTrainer(
+              ^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/unsloth/trainer.py", line 203, in new_init
+    original_init(self, *args, **kwargs)
+  File "/root/swarm_demo/unsloth_compiled_cache/UnslothSFTTrainer.py", line 1004, in __init__
+    super().__init__(
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/transformers/utils/deprecation.py", line 172, in wrapped_func
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/root/swarm_demo/unsloth_compiled_cache/UnslothSFTTrainer.py", line 454, in __init__
+    train_dataset = self._prepare_dataset(
+                    ^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/swarm_demo/unsloth_compiled_cache/UnslothSFTTrainer.py", line 722, in _prepare_dataset
+    dataset = dataset.map(_tokenize, batched = True, **map_kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/datasets/arrow_dataset.py", line 562, in wrapper
+    out: Union["Dataset", "DatasetDict"] = func(self, *args, **kwargs)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/datasets/arrow_dataset.py", line 3334, in map
+    for rank, done, content in iflatmap_unordered(
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/datasets/utils/py_utils.py", line 626, in iflatmap_unordered
+    [async_result.get(timeout=0.05) for async_result in async_results]
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/multiprocess/pool.py", line 774, in get
+    raise self._value
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/multiprocess/pool.py", line 540, in _handle_tasks
+    put(task)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/multiprocess/connection.py", line 209, in send
+    self._send_bytes(_ForkingPickler.dumps(obj))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/multiprocess/reduction.py", line 54, in dumps
+    cls(buf, protocol, *args, **kwds).dump(obj)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 428, in dump
+    StockPickler.dump(self, obj)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 481, in dump
+    self.save(obj)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 896, in save_tuple
+    save(element)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 881, in save_tuple
+    save(element)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 1262, in save_module_dict
+    StockPickler.save_dict(pickler, obj)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 966, in save_dict
+    self._batch_setitems(obj.items())
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 990, in _batch_setitems
+    save(v)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 2042, in save_function
+    _save_with_postproc(pickler, (_create_function, (
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 1153, in _save_with_postproc
+    pickler.save_reduce(*reduction)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 686, in save_reduce
+    save(args)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 881, in save_tuple
+    save(element)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 2042, in save_function
+    _save_with_postproc(pickler, (_create_function, (
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 1153, in _save_with_postproc
+    pickler.save_reduce(*reduction)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 686, in save_reduce
+    save(args)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 881, in save_tuple
+    save(element)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 597, in save
+    self.save_reduce(obj=obj, *rv)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 711, in save_reduce
+    save(state)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 1262, in save_module_dict
+    StockPickler.save_dict(pickler, obj)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 966, in save_dict
+    self._batch_setitems(obj.items())
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 990, in _batch_setitems
+    save(v)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 597, in save
+    self.save_reduce(obj=obj, *rv)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 711, in save_reduce
+    save(state)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 1262, in save_module_dict
+    StockPickler.save_dict(pickler, obj)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 966, in save_dict
+    self._batch_setitems(obj.items())
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 990, in _batch_setitems
+    save(v)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 1262, in save_module_dict
+    StockPickler.save_dict(pickler, obj)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 966, in save_dict
+    self._batch_setitems(obj.items())
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 995, in _batch_setitems
+    save(v)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 597, in save
+    self.save_reduce(obj=obj, *rv)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 711, in save_reduce
+    save(state)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 1262, in save_module_dict
+    StockPickler.save_dict(pickler, obj)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 966, in save_dict
+    self._batch_setitems(obj.items())
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 990, in _batch_setitems
+    save(v)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 1262, in save_module_dict
+    StockPickler.save_dict(pickler, obj)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 966, in save_dict
+    self._batch_setitems(obj.items())
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 995, in _batch_setitems
+    save(v)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 597, in save
+    self.save_reduce(obj=obj, *rv)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 711, in save_reduce
+    save(state)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 1262, in save_module_dict
+    StockPickler.save_dict(pickler, obj)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 966, in save_dict
+    self._batch_setitems(obj.items())
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 990, in _batch_setitems
+    save(v)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 1262, in save_module_dict
+    StockPickler.save_dict(pickler, obj)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 966, in save_dict
+    self._batch_setitems(obj.items())
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 990, in _batch_setitems
+    save(v)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 597, in save
+    self.save_reduce(obj=obj, *rv)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 711, in save_reduce
+    save(state)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 1262, in save_module_dict
+    StockPickler.save_dict(pickler, obj)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 966, in save_dict
+    self._batch_setitems(obj.items())
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 990, in _batch_setitems
+    save(v)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 1526, in save_instancemethod0
+    pickler.save_reduce(MethodType, (obj.__func__, obj.__self__), obj=obj)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 686, in save_reduce
+    save(args)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 881, in save_tuple
+    save(element)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 2042, in save_function
+    _save_with_postproc(pickler, (_create_function, (
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 1131, in _save_with_postproc
+    pickler.save_reduce(*reduction, obj=obj)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 711, in save_reduce
+    save(state)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 881, in save_tuple
+    save(element)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 1262, in save_module_dict
+    StockPickler.save_dict(pickler, obj)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 966, in save_dict
+    self._batch_setitems(obj.items())
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 995, in _batch_setitems
+    save(v)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 2042, in save_function
+    _save_with_postproc(pickler, (_create_function, (
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 1146, in _save_with_postproc
+    pickler._batch_setitems(iter(source.items()))
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 990, in _batch_setitems
+    save(v)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 1889, in save_type
+    _save_with_postproc(pickler, (_create_type, (
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 1131, in _save_with_postproc
+    pickler.save_reduce(*reduction, obj=obj)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 686, in save_reduce
+    save(args)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 896, in save_tuple
+    save(element)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 1262, in save_module_dict
+    StockPickler.save_dict(pickler, obj)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 966, in save_dict
+    self._batch_setitems(obj.items())
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 990, in _batch_setitems
+    save(v)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 597, in save
+    self.save_reduce(obj=obj, *rv)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 686, in save_reduce
+    save(args)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 881, in save_tuple
+    save(element)
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 422, in save
+    StockPickler.save(self, obj, save_persistent_id)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 554, in save
+    f(self, obj)  # Call unbound method with explicit self
+    ^^^^^^^^^^^^
+  File "/root/swarm_demo/.venv/lib/python3.12/site-packages/dill/_dill.py", line 1926, in save_type
+    StockPickler.save_global(pickler, obj, name=obj_name)
+  File "/root/miniconda3/lib/python3.12/pickle.py", line 1063, in save_global
+    raise PicklingError(
+_pickle.PicklingError: Can't pickle <class 'builtins.safe_open'>: it's not found as builtins.safe_open
+(.venv) root@autodl-container-aa9d4bbc8b-597deee6:~/swarm_demo# 

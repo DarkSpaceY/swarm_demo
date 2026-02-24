@@ -1,10 +1,16 @@
 import logging
 import concurrent.futures
+import copy
+from config_loader import get_config
+
+CONFIG = get_config()
 
 class Environment:
-    def __init__(self, agents, problem, max_rounds=5):
+    def __init__(self, agents, problem, max_rounds=None):
         self.agents = {agent.agent_id: agent for agent in agents}
         self.problem = problem
+        if max_rounds is None:
+            max_rounds = CONFIG["environment"]["max_rounds_default"]
         self.max_rounds = max_rounds
         self.history_log = [] # 记录整条轨迹的所有交互
 
@@ -24,50 +30,64 @@ class Environment:
                 inputs_by_agent[agent_id] = chat_history
 
             outputs_by_agent = {}
-            with concurrent.futures.ThreadPoolExecutor(max_workers=len(agent_ids)) as executor:
-                futures = {
-                    executor.submit(model_fn, agent_id, inputs_by_agent[agent_id]): agent_id
-                    for agent_id in agent_ids
-                }
-                for future in concurrent.futures.as_completed(futures):
-                    agent_id = futures[future]
-                    outputs_by_agent[agent_id] = future.result()
+            if hasattr(model_fn, "batch_generate"):
+                outputs_by_agent = model_fn.batch_generate(inputs_by_agent)
+            else:
+                for agent_id in agent_ids:
+                    outputs_by_agent[agent_id] = model_fn(agent_id, inputs_by_agent[agent_id])
 
+            pending_routes = []
+            final_answer = None
+            final_agent_id = None
+            data_keys = CONFIG["data_keys"]
             for agent_id in agent_ids:
                 agent = self.agents[agent_id]
-                output_text = outputs_by_agent.get(agent_id, "")
-                routes, final_answer = agent.parse_output(output_text)
+                output_text = outputs_by_agent.get(agent_id, CONFIG["common"]["empty_text"])
+                routes, current_final = agent.parse_output(output_text)
 
                 self.history_log.append({
-                    "round": r + 1,
-                    "agent": agent_id,
-                    "input": inputs_by_agent[agent_id],
-                    "output": output_text,
-                    "routes": routes,
-                    "is_final": final_answer is not None
+                    data_keys["round"]: r + 1,
+                    data_keys["agent_id"]: agent_id,
+                    data_keys["input"]: copy.deepcopy(inputs_by_agent[agent_id]),
+                    data_keys["output"]: output_text,
+                    data_keys["routes"]: routes,
+                    data_keys["is_final"]: current_final is not None
                 })
 
-                for route in routes:
-                    target_id = route["target"]
-                    if target_id in self.agents:
-                        self.agents[target_id].receive_message(agent_id, route["content"])
-                        logging.info(f"  [Message] {agent_id} -> {target_id}: {route['content']}")
+                pending_routes.extend([(agent_id, route) for route in routes])
+                if final_answer is None and current_final is not None and current_final != "":
+                    final_answer = current_final
+                    final_agent_id = agent_id
 
-                if final_answer is not None:
-                    logging.info(f"  [FIN] {agent_id} submitted answer: {final_answer}")
-                    return {
-                        "status": "SUCCESS",
-                        "final_answer": final_answer,
-                        "trajectory": self.history_log,
-                        "rounds": r + 1
-                    }
+            for sender_id, route in pending_routes:
+                target_id = route["target"]
+                if target_id == CONFIG["agent"]["broadcast_target"]:
+                    for other_id, other_agent in self.agents.items():
+                        if other_id != sender_id:
+                            other_agent.receive_message(sender_id, route["content"])
+                            logging.info(f"  [Message] {sender_id} -> {other_id}: {{{route['content']}}}")
+                    continue
+                if target_id in self.agents:
+                    self.agents[target_id].receive_message(sender_id, route["content"])
+                    logging.info(f"  [Message] {sender_id} -> {target_id}: {{{route['content']}}}")
+
+            if final_answer is not None:
+                logging.info(f"  [FIN] {final_agent_id} submitted answer: {final_answer}")
+                return {
+                    data_keys["status"]: CONFIG["inference"]["status_success"],
+                    data_keys["final_answer"]: final_answer,
+                    data_keys["final_agent_id"]: final_agent_id,
+                    data_keys["trajectory"]: self.history_log,
+                    data_keys["rounds"]: r + 1
+                }
             self._clear_cache()
         
         return {
-            "status": "TIMEOUT",
-            "final_answer": None,
-            "trajectory": self.history_log,
-            "rounds": self.max_rounds
+            data_keys["status"]: CONFIG["inference"]["status_timeout"],
+            data_keys["final_answer"]: None,
+            data_keys["final_agent_id"]: None,
+            data_keys["trajectory"]: self.history_log,
+            data_keys["rounds"]: self.max_rounds
         }
 
     def reset(self):

@@ -1,0 +1,363 @@
+logging:
+  level: DEBUG
+  format: "%(asctime)s - %(levelname)s - %(message)s"
+  force: true
+
+generation:
+  max_new_tokens: 512
+  do_sample: true
+  temperature: 0.7
+  top_p: 0.9
+  top_k: 50
+  default_reply: "无法处理。"
+  empty_prompt_fallback: "请回答。"
+  fallback_role_format: "{role}: {content}"
+  fallback_suffix: "\nassistant:"
+  fallback_joiner: "\n"
+
+swarm:
+  agent_count: 5
+  agent_prefix: "Agent_"
+  system_prompt_template: |
+    你是一个任务小组的成员。
+
+    【你的身份】
+    你是 {agent_id}，其他成员是 {agent_list}。
+
+    【协作方式】
+    你们会同时看到任务。
+    你可以对所有人说话，也可以指定对某个人说话。
+    你也会看到其他人说的话。
+
+    【怎么说话】
+
+    如果你想对某个人说：@那个人ID {{你想说的话}}
+    例如：@Agent_1 {{我觉得这个方程应该这样列}}
+    如果你想对所有人说：@所有人 {{你想说的话}}
+    例如：@所有人 {{大家看看这样行不行}}
+    【什么时候结束】
+    当你们达成一致，或者你确定最终答案时，输出：
+    [FIN] 最终答案
+    例如：[FIN] x = 5
+
+    【注意事项】
+
+    不要 @自己，因为对自己说话没有意义
+    @ 的内容需要用大括号括起来
+    你只需要完成任务和说话，其他事情系统会处理
+
+agent:
+  task_prefix: "任务目标: {problem}"
+  inbox_prefix: "From {sender_id}: {content}"
+  inbox_message_prefix: "新收到消息:\n{stimuli}"
+  continue_prompt: "请继续根据当前情况决策。"
+  broadcast_pattern: "@所有人\\s*\\{([^}]*)\\}"
+  direct_pattern: "@Agent_(\\d+)\\s*\\{([^}]*)\\}"
+  fin_pattern: "\\[FIN\\]\\s*(.*)"
+  broadcast_target: "ALL"
+  role_system: "system"
+  role_user: "user"
+  role_assistant: "assistant"
+  roles:
+    - "system"
+    - "user"
+    - "assistant"
+
+environment:
+  max_rounds_default: 5
+
+dataset:
+  name_default: "openai/gsm8k"
+  split_default: "test"
+  num_samples_default: 50
+  streaming_default: false
+  seed_default: 42
+  shuffle_buffer_default: 1000
+  problem_field: "question"
+  answer_field: "answer"
+  id_field: "id"
+  empty_text: ""
+
+judge:
+  answer_placeholder: "N/A"
+  traj_snippet_max_chars: 200
+  candidate_template: "选项 {idx} (Answer: {final_ans}):\n{traj_content}\n"
+  task_template: |
+    原始题目：
+    {problem}
+
+    标准答案：
+    {gt_answer}
+
+    候选选项：
+    {candidates}
+    请对候选选项进行从优到劣的排序，并给出你认可的顺序。
+  consensus_invalid: -1
+  tie_gap_threshold: 1
+
+parser:
+  judge_parser_prompt: |
+    你是输出解析器，只做排序抽取。
+    根据给定文本内容，输出从优到劣的索引序列，索引范围 0..N-1。
+    输出格式：
+    - 仅输出一行
+    - 内容为逗号分隔的索引序列
+    - 不要输出任何其它文字
+    N={num_candidates}
+    文本：{result_text}
+
+oracle:
+  tolerance: 1e-6
+  clean_patterns:
+    - "\\\\(mathrm|text|boxed)\\{.*?\\}"
+  replacements:
+    - ["$", ""]
+    - ["\\", ""]
+    - [",", ""]
+  fraction_pattern: "(-?\\d+)\\s*/\\s*(-?\\d+)"
+  number_pattern: "-?\\d+(?:\\.\\d+)?(?:e[-+]?\\d+)?"
+  number_ignorecase: true
+  llm_prompt: |
+    你是判别器，只判断预测答案是否与标准答案等价。
+    只输出 YES 或 NO，不要解释。
+    预测答案：{prediction}
+    标准答案：{ground_truth}
+  yes_token: "YES"
+  no_token: "NO"
+
+dreamer:
+  num_variants_default: 2
+  max_queue_default: 50
+  line_prefix_pattern: "^\\s*\\d+[\\).\\、]\\s*"
+  prompt_template: |
+    你是题目变形器。要求保持题意与答案不变，不要泄露答案。
+    只输出变形后的题目，每行一个，不要额外解释。
+    需要变形数量：{num_variants}
+    原始题目：
+    {problem_text}
+    标准答案：
+    {gt_answer}
+
+run_defaults:
+  run_name: "swarm_run"
+  output_dir: "./runs"
+  model_name: "unsloth/Qwen2.5-1.5B-Instruct"
+  max_seq_length: 2048
+  load_in_4bit: true
+  local_files_only: false
+  num_batches: 3
+  num_problems: 5
+  num_solver_samples: 4
+  num_judge_samples: 6
+  solver_max_workers: 4
+  judge_max_workers: 6
+  max_rounds: 3
+  seed: 42
+  dataset_streaming: true
+  dataset_shuffle_buffer: 1000
+  gen_max_new_tokens: 512
+  gen_do_sample: true
+  gen_temperature: 0.7
+  gen_top_p: 0.9
+  gen_top_k: 50
+  use_vllm: false
+  vllm_prefix_caching: true
+  vllm_gpu_memory_utilization: 0.9
+  vllm_enable_lora: false
+  vllm_lora_path_template: "{run_dir}/checkpoints/{agent_id}/lora"
+  vllm_max_workers: 4
+  train_lora: false
+  lora_epochs: 1
+  lora_batch_size: 2
+  lora_grad_accum: 4
+  lora_lr: 2e-4
+  lora_logging_steps: 1
+  lora_save_strategy: "epoch"
+  lora_save_total_limit: 2
+  lora_judge_oversample: 2
+  judge_update_interval: 1
+  accuracy_window_batches: 3
+  train_judge: true
+  train_preference: false
+  preference_algorithm: "dpo"
+  preference_beta: 0.1
+  preference_sft_weight: 0.1
+  preference_epochs: 1
+  preference_batch_size: 2
+  preference_grad_accum: 4
+  preference_lr: 2e-4
+  preference_logging_steps: 1
+  preference_save_strategy: "epoch"
+  preference_save_total_limit: 2
+  preference_max_pairs_per_agent: 2
+  enable_dreamer: false
+  dreamer_num_variants: 2
+  dreamer_max_queue: 50
+
+inference:
+  disable_unsloth_env: "DISABLE_UNSLOTH_INFERENCE"
+  cuda_device: "cuda"
+  cpu_device: "cpu"
+  oracle_agent_id: "Oracle"
+  judge_parser_agent_id: "JudgeParser"
+  dreamer_agent_id: "Dreamer"
+  status_success: "SUCCESS"
+  status_timeout: "TIMEOUT"
+
+data_keys:
+  messages: "messages"
+  agent_id: "agent_id"
+  round: "round"
+  chosen: "chosen"
+  rejected: "rejected"
+  text: "text"
+  prompt: "prompt"
+  task: "task"
+  trajectory: "trajectory"
+  final_answer: "final_answer"
+  vote_val: "vote_val"
+  problem: "problem"
+  answer: "answer"
+  source: "source"
+  origin: "origin"
+  id: "id"
+  routes: "routes"
+  is_final: "is_final"
+  input: "input"
+  output: "output"
+  final_agent_id: "final_agent_id"
+  rounds: "rounds"
+  status: "status"
+
+common:
+  empty_text: ""
+
+agents:
+  solver_id: "solver"
+  judge_id: "judge"
+  preference_fallback_id: "solver"
+
+paths:
+  data_dir: "data"
+  solver_dir: "solver"
+  judge_dir: "judge"
+  preference_dir: "preference"
+  dreamer_dir: "dreamer"
+  metrics_file: "metrics.jsonl"
+  checkpoints_dir: "checkpoints"
+  solver_file_template: "solver_batch_{batch_id}.jsonl"
+  pref_file_template: "pref_batch_{batch_id}.jsonl"
+  pref_agent_file_template: "pref_batch_{batch_id}_{agent_id}.jsonl"
+  judge_file_template: "judge_batch_{start}_{end}.jsonl"
+  dreamer_file_template: "dreamer_batch_{batch_id}.jsonl"
+
+training:
+  output_dir: "./train/checkpoints"
+  dataset_format: "json"
+  dataset_split: "train"
+  batch_size: 2
+  grad_accum: 4
+  warmup_steps: 5
+  epochs: 1
+  learning_rate: 2e-4
+  logging_steps: 1
+  save_strategy: "epoch"
+  save_total_limit: 2
+  optim: "adamw_8bit"
+  seed: 3407
+  empty_text: ""
+  prompt_joiner: "\n"
+  lora_dir: "lora"
+  algorithm_rpo: "rpo"
+  loss_type_dpo: "dpo"
+  loss_type_sft: "sft"
+  loss_weight_dpo: 1.0
+  sft_weight: 0.1
+  beta: 0.1
+  lora:
+    r: 16
+    target_modules:
+      - "q_proj"
+      - "k_proj"
+      - "v_proj"
+      - "o_proj"
+      - "gate_proj"
+      - "up_proj"
+      - "down_proj"
+    lora_alpha: 16
+    lora_dropout: 0
+    bias: "none"
+    use_gradient_checkpointing: "unsloth"
+    random_state: 3407
+    use_rslora: false
+    loftq_config: null
+
+files:
+  hf_config: "config.json"
+
+vllm:
+  sampling_n: 1
+  agent_index_mod: 100000
+  agent_index_offset: 1
+
+templates:
+  lora_agent_marker: "__AGENT_ID__"
+  lora_agent_placeholder: "{agent_id}"
+  lora_run_dir_placeholder: "{run_dir}"
+
+tokenizer:
+  return_tensors: "pt"
+  input_ids_key: "input_ids"
+  attention_mask_key: "attention_mask"
+
+limits:
+  min_workers: 1
+  min_accuracy_window: 1
+  min_samples_fallback: 1
+
+finetuner:
+  model_name_default: "unsloth/Qwen2.5-1.5B-Instruct"
+  output_dir_default: "./train/checkpoints"
+  max_seq_length_default: 2048
+  load_in_4bit_default: true
+  lora:
+    r: 16
+    target_modules:
+      - "q_proj"
+      - "k_proj"
+      - "v_proj"
+      - "o_proj"
+      - "gate_proj"
+      - "up_proj"
+      - "down_proj"
+    lora_alpha: 16
+    lora_dropout: 0
+    bias: "none"
+    use_gradient_checkpointing: "unsloth"
+    random_state: 3407
+    use_rslora: false
+    loftq_config: null
+  training:
+    warmup_steps: 5
+    optim: "adamw_8bit"
+    seed: 3407
+    save_strategy: "epoch"
+    save_total_limit: 2
+  train_agent_defaults:
+    epochs: 1
+    batch_size: 2
+    gradient_accumulation_steps: 4
+    learning_rate: 2e-4
+    logging_steps: 1
+    judge_oversample: 1
+  preference_defaults:
+    algorithm: "dpo"
+    beta: 0.1
+    sft_weight: 0.1
+    epochs: 1
+    batch_size: 2
+    gradient_accumulation_steps: 4
+    learning_rate: 2e-4
+    logging_steps: 1
+    save_strategy: "epoch"
+    save_total_limit: 2
