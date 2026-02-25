@@ -1,3 +1,5 @@
+from unsloth import FastLanguageModel
+from unsloth.chat_templates import get_chat_template
 import os
 import torch
 import logging
@@ -5,8 +7,6 @@ import json
 from transformers import TrainingArguments
 from datasets import load_dataset
 from trl import SFTTrainer
-from unsloth import FastLanguageModel
-from unsloth.chat_templates import get_chat_template
 
 # 默认训练配置
 DEFAULT_TRAINING_CONFIG = {
@@ -110,7 +110,7 @@ def train_special_tokens():
             texts.append(text)
         return { "text" : texts, }
 
-    dataset = dataset.map(formatting_prompts_func, batched = True,)
+    dataset = dataset.map(formatting_prompts_func, batched = True, remove_columns=dataset.column_names)
 
     # 6. 训练参数
     training_args = TrainingArguments(
@@ -131,13 +131,11 @@ def train_special_tokens():
     )
 
     # 7. 开始训练
-    # 针对新版 TRL 的 API 调整：
-    # 1. 使用 dataset_text_field 指定映射后的字段
-    # 2. 如果 Unsloth 版本较新，它会自动处理处理类集成
+    # 注意：针对不同版本的 TRL，SFTTrainer 的参数要求可能有所不同
+    # 我们已经通过 map 将数据处理成了包含 'text' 字段的格式
     trainer = SFTTrainer(
         model = model,
         train_dataset = dataset,
-        dataset_text_field = "text",
         max_seq_length = max_seq_length,
         dataset_num_proc = 2,
         packing = False,
