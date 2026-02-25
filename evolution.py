@@ -548,7 +548,7 @@ def run_evolution_batch(
     ))
     if not problems:
         logging.error("No problems loaded. Check dataset access and configuration.")
-        return 0.0, [], [], 0, 0
+        return 0.0, [], [], 0, 0, [], [], 0, 0
     oracle = Oracle(inference_model_fn)
     
     batch_correct_count = 0
@@ -713,7 +713,7 @@ def run_evolution_batch(
 
     total_count = len(problems)
     accuracy = batch_correct_count / total_count if total_count else 0
-    return accuracy, batch_solver_data, batch_judge_data, batch_correct_count, total_count
+    return accuracy, batch_solver_data, batch_judge_data, batch_correct_count, total_count, batch_pref_data, dreamer_records, batch_judge_correct_count, batch_judge_total_count
 
 def build_arg_parser():
     parser = argparse.ArgumentParser()
@@ -858,7 +858,7 @@ def main():
     judge_buffer_start = None
 
     for batch_id in range(args.num_batches):
-        accuracy, solver_data, judge_data, correct_count, total_count = run_evolution_batch(
+        accuracy, solver_data, judge_data, correct_count, total_count, pref_data, dreamer_records, judge_correct_count, judge_total_count = run_evolution_batch(
             batch_id,
             num_problems=args.num_problems,
             num_solver_samples=args.num_solver_samples,
