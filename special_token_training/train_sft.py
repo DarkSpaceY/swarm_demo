@@ -8,31 +8,42 @@ from trl import SFTTrainer
 from unsloth import FastLanguageModel
 from unsloth.chat_templates import get_chat_template
 
+# 默认训练配置
+DEFAULT_TRAINING_CONFIG = {
+    "model_name": "unsloth/Qwen2.5-7B-Instruct",
+    "max_seq_length": 2048,
+    "load_in_4bit": True,
+    "lora": {"r": 16, "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj"], "lora_alpha": 16, "lora_dropout": 0},
+    "output_dir": "outputs/special_token_sft",
+    "learning_rate": 2e-4,
+    "num_train_epochs": 3,
+    "per_device_train_batch_size": 4,
+    "gradient_accumulation_steps": 4,
+    "warmup_steps": 10,
+    "logging_steps": 1,
+    "optimizer": "adamw_8bit",
+    "weight_decay": 0.01,
+    "lr_scheduler_type": "linear",
+    "seed": 42,
+}
+
 # 尝试导入主程序的配置加载器，如果失败则使用默认配置
 try:
     import sys
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from config_loader import get_config
     CONFIG = get_config()
-except ImportError:
+    # 如果主配置中没有 training 部分，或者 training 部分不完整，进行合并
+    if "training" not in CONFIG:
+        CONFIG["training"] = DEFAULT_TRAINING_CONFIG
+    else:
+        # 深度合并确保所有字段都存在
+        for k, v in DEFAULT_TRAINING_CONFIG.items():
+            if k not in CONFIG["training"]:
+                CONFIG["training"][k] = v
+except Exception:
     CONFIG = {
-        "training": {
-            "model_name": "unsloth/Qwen2.5-7B-Instruct",
-            "max_seq_length": 2048,
-            "load_in_4bit": True,
-            "lora": {"r": 16, "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj"], "lora_alpha": 16, "lora_dropout": 0},
-            "output_dir": "outputs/special_token_sft",
-            "learning_rate": 2e-4,
-            "num_train_epochs": 3,
-            "per_device_train_batch_size": 4,
-            "gradient_accumulation_steps": 4,
-            "warmup_steps": 10,
-            "logging_steps": 1,
-            "optimizer": "adamw_8bit",
-            "weight_decay": 0.01,
-            "lr_scheduler_type": "linear",
-            "seed": 42,
-        },
+        "training": DEFAULT_TRAINING_CONFIG,
         "agent": {
             "role_system": "system",
             "role_user": "user",

@@ -30,6 +30,14 @@ try:
         from config_loader import get_config
         real_config = get_config()
         if real_config:
+            # 深度合并确保所有字段都存在
+            for section, items in DEFAULT_CONFIG.items():
+                if section not in real_config:
+                    real_config[section] = items
+                else:
+                    for k, v in items.items():
+                        if k not in real_config[section]:
+                            real_config[section][k] = v
             CONFIG = real_config
     except Exception:
         pass
