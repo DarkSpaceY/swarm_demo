@@ -55,6 +55,24 @@ logging.basicConfig(level=logging.INFO)
 
 def train_special_tokens():
     train_cfg = CONFIG["training"]
+    
+    # 强制转换数值类型，防止 config.yaml 中读取到字符串导致 Unsloth 校验失败
+    numeric_fields = [
+        "learning_rate", "num_train_epochs", "per_device_train_batch_size", 
+        "gradient_accumulation_steps", "warmup_steps", "weight_decay", "seed", "max_seq_length"
+    ]
+    for field in numeric_fields:
+        if field in train_cfg:
+            try:
+                if field == "num_train_epochs":
+                    train_cfg[field] = float(train_cfg[field])
+                elif field in ["learning_rate", "weight_decay"]:
+                    train_cfg[field] = float(train_cfg[field])
+                else:
+                    train_cfg[field] = int(train_cfg[field])
+            except (ValueError, TypeError):
+                pass
+
     model_name = train_cfg["model_name"]
     max_seq_length = train_cfg["max_seq_length"]
     load_in_4bit = train_cfg["load_in_4bit"]
