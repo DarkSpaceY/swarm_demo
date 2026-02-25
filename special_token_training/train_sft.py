@@ -149,10 +149,11 @@ def train_special_tokens():
     )
 
     # 7. 开始训练
-    # 注意：针对不同版本的 TRL，SFTTrainer 的参数要求可能有所不同
-    # 我们已经通过 map 将数据处理成了包含 'text' 字段的格式
+    # 注意：在某些版本的 Unsloth/TRL 中，如果不显式传递 tokenizer，
+    # 内部的 fix_untrained_tokens 函数可能会因为找不到 tokenizer 而报错 AttributeError。
     trainer = SFTTrainer(
         model = model,
+        tokenizer = tokenizer,
         train_dataset = dataset,
         max_seq_length = max_seq_length,
         dataset_num_proc = 2,
