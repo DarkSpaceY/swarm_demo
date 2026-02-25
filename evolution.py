@@ -387,11 +387,13 @@ def format_judge_task(problem_text, candidate_trajectories, gt_answer):
     max_chars = CONFIG["judge"]["traj_snippet_max_chars"]
     candidate_template = CONFIG["judge"]["candidate_template"]
     for idx, traj in enumerate(candidate_trajectories):
-        final_ans = traj.get("final_answer", answer_placeholder)
+        final_ans = traj.get(CONFIG["data_keys"]["final_answer"], answer_placeholder)
         traj_content = ""
-        for step in traj["trajectory"]:
-            if step['agent'].startswith(CONFIG["swarm"]["agent_prefix"]):
-                traj_content += f"{step['agent']}: {step['output'][:max_chars]}...\n"
+        for step in traj.get(CONFIG["data_keys"]["trajectory"], []):
+            agent_id_key = CONFIG["data_keys"]["agent_id"]
+            output_key = CONFIG["data_keys"]["output"]
+            if step.get(agent_id_key, "").startswith(CONFIG["swarm"]["agent_prefix"]):
+                traj_content += f"{step[agent_id_key]}: {step.get(output_key, '')[:max_chars]}...\n"
         candidates_text += candidate_template.format(idx=idx, final_ans=final_ans, traj_content=traj_content)
 
     task_template = CONFIG["judge"]["task_template"]
@@ -546,7 +548,7 @@ def run_evolution_batch(
     ))
     if not problems:
         logging.error("No problems loaded. Check dataset access and configuration.")
-        return 0.0, [], [], 0, 0, [], []
+        return 0.0, [], [], 0, 0, [], [], 0, 0
     oracle = Oracle(inference_model_fn)
     
     batch_correct_count = 0
@@ -750,7 +752,7 @@ def build_arg_parser():
     parser.add_argument("--vllm-max-lora-rank", type=int, default=None)
     parser.add_argument("--vllm-lora-path-template", type=str, default=run_defaults["vllm_lora_path_template"])
     parser.add_argument("--vllm-max-workers", type=int, default=run_defaults["vllm_max_workers"])
-    parser.add_argument("--train-lora", action="store_true")
+    parser.add_argument("--train-lora", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--lora-epochs", type=int, default=run_defaults["lora_epochs"])
     parser.add_argument("--lora-batch-size", type=int, default=run_defaults["lora_batch_size"])
     parser.add_argument("--lora-grad-accum", type=int, default=run_defaults["lora_grad_accum"])
@@ -776,6 +778,7 @@ def build_arg_parser():
     parser.add_argument("--preference-max-pairs-per-agent", type=int, default=run_defaults["preference_max_pairs_per_agent"])
     parser.add_argument("--enable-dreamer", action=argparse.BooleanOptionalAction, default=run_defaults["enable_dreamer"])
     parser.add_argument("--dreamer-num-variants", type=int, default=run_defaults["dreamer_num_variants"])
+    parser.add_argument("--dreamer-max-queue", type=int, default=run_defaults["dreamer_max_queue"])
     parser.add_argument("--agent-count", type=int, default=CONFIG["swarm"]["agent_count"])
     parser.add_argument("--judge-trust-threshold", type=float, default=0.6)
     return parser
@@ -784,6 +787,7 @@ def main():
     parser = build_arg_parser()
     args = parser.parse_args()
 
+    logging.info(f"Setting seed: {args.seed}")
     set_seed(args.seed)
     CONFIG["swarm"]["agent_count"] = args.agent_count
     GEN_CONFIG["max_new_tokens"] = args.gen_max_new_tokens
@@ -792,6 +796,7 @@ def main():
     GEN_CONFIG["top_p"] = args.gen_top_p
     GEN_CONFIG["top_k"] = args.gen_top_k
 
+    logging.info(f"Initializing run directory: {args.run_name}")
     paths_cfg = CONFIG["paths"]
     run_dir = os.path.join(args.output_dir, args.run_name)
     data_dir = os.path.join(run_dir, paths_cfg["data_dir"])
@@ -805,6 +810,7 @@ def main():
     os.makedirs(pref_dir, exist_ok=True)
     os.makedirs(dreamer_dir, exist_ok=True)
 
+    logging.info(f"Loading model into memory: {args.model_name} (this may take a few minutes)...")
     init_inference_model(
         args.model_name,
         args.max_seq_length,
@@ -814,6 +820,7 @@ def main():
         args.use_vllm,
     )
 
+    logging.info("Starting inference engine (compiling kernels)...")
     vllm_max_model_len = args.vllm_max_model_len or args.max_seq_length
     vllm_lora_path_template = resolve_lora_path_template(args.vllm_lora_path_template, run_dir)
     init_inference_engine(
@@ -831,6 +838,7 @@ def main():
 
     trainer = None
     if args.train_lora:
+        logging.info("Initializing SwarmTrainer...")
         trainer = SwarmTrainer(
             model_name=args.model_name,
             output_dir=os.path.join(run_dir, paths_cfg["checkpoints_dir"]),
@@ -839,6 +847,8 @@ def main():
             cache_dir=args.model_cache_dir,
             local_files_only=args.local_files_only,
         )
+
+    logging.info("Starting evolution batches...")
 
     prev_accuracy = 0.0
     judge_prev_accuracy = 0.0

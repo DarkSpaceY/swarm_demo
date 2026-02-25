@@ -5,10 +5,24 @@ import time
 
 def run_command(cmd):
     print(f"Running: {' '.join(cmd)}")
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        print(f"Error: {result.stderr}")
-    return result.stdout
+    # 使用 Popen 实时流式输出 stdout 和 stderr
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+        universal_newlines=True
+    )
+    
+    # 实时打印子进程的输出
+    for line in process.stdout:
+        print(line, end='', flush=True)
+        
+    process.wait()
+    if process.returncode != 0:
+        print(f"\nCommand failed with return code {process.returncode}")
+    return ""
 
 def get_accuracy_from_metrics(run_name):
     metrics_path = f"./runs/{run_name}/metrics.jsonl"

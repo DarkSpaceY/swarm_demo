@@ -38,18 +38,18 @@ def convert_trajectory_to_sft(trajectory):
     """
     sft_data = []
     
+    data_keys = CONFIG["data_keys"]
     for step in trajectory:
-        agent_id = step['agent']
-        chat_history = step['input'] # List[Dict]
-        model_output = step['output']
+        agent_id = step[data_keys["agent_id"]]
+        chat_history = step[data_keys["input"]] # List[Dict]
+        model_output = step[data_keys["output"]]
         
         messages = normalize_chat_history(chat_history)
         messages.append({"role": "assistant", "content": model_output})
-        data_keys = CONFIG["data_keys"]
         sample = {
             data_keys["messages"]: messages,
             data_keys["agent_id"]: agent_id,
-            data_keys["round"]: step['round']
+            data_keys["round"]: step[data_keys["round"]]
         }
         sft_data.append(sample)
         
@@ -78,9 +78,10 @@ def save_jsonl_data(records, filepath):
 
 def _group_steps_by_agent_round(trajectory):
     grouped = {}
+    data_keys = CONFIG["data_keys"]
     for step in trajectory:
-        agent_id = step.get("agent")
-        round_id = step.get("round")
+        agent_id = step.get(data_keys["agent_id"])
+        round_id = step.get(data_keys["round"])
         if agent_id is None or round_id is None:
             continue
         grouped.setdefault(agent_id, {}).setdefault(round_id, []).append(step)

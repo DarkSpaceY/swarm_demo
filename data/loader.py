@@ -24,7 +24,10 @@ def load_math_problems(dataset_name=None, split=None, num_samples=None, streamin
         shuffle_buffer = dataset_cfg["shuffle_buffer_default"]
     logging.info(f"Loading dataset: {dataset_name} ({split})")
     try:
-        dataset = load_dataset(dataset_name, split=split, streaming=streaming)
+        if dataset_name == "openai/gsm8k" and split == "test":
+            dataset = load_dataset(dataset_name, "main", split=split, streaming=streaming)
+        else:
+            dataset = load_dataset(dataset_name, split=split, streaming=streaming)
     except Exception as e:
         logging.error(f"Failed to load dataset: {e}")
         return []
