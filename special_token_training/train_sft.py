@@ -131,14 +131,16 @@ def train_special_tokens():
     )
 
     # 7. 开始训练
+    # 针对新版 TRL 的 API 调整：
+    # 1. 使用 dataset_text_field 指定映射后的字段
+    # 2. 如果 Unsloth 版本较新，它会自动处理处理类集成
     trainer = SFTTrainer(
         model = model,
-        tokenizer = tokenizer,
         train_dataset = dataset,
         dataset_text_field = "text",
         max_seq_length = max_seq_length,
         dataset_num_proc = 2,
-        packing = False, # 序列通常不长，不需要 packing
+        packing = False,
         args = training_args,
     )
 
